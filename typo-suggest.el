@@ -1,4 +1,5 @@
-;;; typo-suggest.el ---                      -*- lexical-binding: t; -*-
+;; -*- lexical-binding: t -*-
+;;; typo-suggest.el --- Don't make typo with the help of helm and compny
 
 ;; Copyright (C) 2020  Kadir Can Çetin
 
@@ -65,7 +66,8 @@
     (delete-region (point)(point-min))(buffer-string)))
 
 (defun typo-suggest--results (fetched_str)
-  "Gets json but string datatype result of the datamuse api, returns list of strings suggestion."
+  "Gets json but string datatype result of the datamuse api,
+returns list of strings suggestion."
   (mapcar 'cdr (mapcar 'car (json-read-from-string  (typo-suggest--fetch-results fetched_str)))))
 
 
