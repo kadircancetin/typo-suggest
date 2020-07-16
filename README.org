@@ -1,5 +1,9 @@
 This package is a [[https://www.datamuse.com/api/][datamuse]] api backend for fixing typos, getting suggestions and finding the correct word with ~helm~ or ~company-mode~.
 
+
+#+NAME:   fig:typo-suggest
+[[https://s7.gifyu.com/images/typo-suggest.gif]]
+
 * Usage
 Use ~M-x typo-suggest-helm~ for helm completion. There is two helm actions. First one is insert the suggested completion which you can use with pressing the ~<Enter>~, second one is replace the current word under the cursor, wich you can use ~<TAB F2>~.
 
