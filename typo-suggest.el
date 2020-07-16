@@ -2,8 +2,10 @@
 
 ;; Copyright (C) 2020  Kadir Can Çetin
 
-;; Author: Nic Ferrier <kadircancetin@gmail.com>
-;; Keywords: typo, suggestion
+;; Author: Kadir Can Çetin <kadircancetin@gmail.com>
+;; Keywords: convenience, wp
+;; Package-Requires: ((emacs "24.2") (cl-lib "0") (json "0") (helm "3.0") (company "0.9.10"))
+;; URL: https://github.com/kadircancetin/typo-suggest
 ;; Version: 0.0.1
 
 ;; This program is free software; you can redistribute it and/or modify
@@ -28,7 +30,6 @@
 ;; code goes here
 
 (require 'cl-lib)
-(require 'hippie-exp)
 (require 'json)
 (require 'thingatpt)
 (require 'helm)
@@ -73,7 +74,6 @@ comes from `typo-suggest--fetch-result'."
   (mapcar 'cdr (mapcar 'car (json-read-from-string  (typo-suggest--fetch-results fetched_str)))))
 
 
-;;;###autoload
 (defun typo-suggest--helm-replace-word(x)
   "Replace the word under the cursor with X paramter."
   (interactive)
