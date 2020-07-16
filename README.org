@@ -3,6 +3,14 @@
 
 This package is a [[https://www.datamuse.com/api/][datamuse api]] backend for fixing typos, getting suggestions and finding the correct word with ~helm~ or ~company-mode~.
 
+* Installation
+The melpa package is comming. If you want to try package early and you used straight.el, you can install directly in this snippet.
+
+#+begin_src emacs-lisp
+  (use-package typo-suggest
+    :straight (typo-suggest :type git :host github :repo "kadircancetin/typo-suggest"))
+#+end_src
+
 
 * Usage
 Use ~M-x typo-suggest-helm~ for helm completion. There is two helm actions. First one is insert the suggested completion which you can use with pressing the ~<Enter>~, second one is replace the current word under the cursor, wich you can use ~<TAB F2>~.
@@ -16,7 +24,7 @@ Variable ~typo-suggest-suggestion-count~ is for the count of suggestions from da
 
 Variable ~typo-suggest-timeout~ is for the remote server timeout. If your connection is unstable, you may want to increase this value.
 
-#+begin_src emacs-lisp :tangle yes
+#+begin_src emacs-lisp
   (setq typo-suggest-suggestion-count 20)
   (setq typo-suggest-timeout 1)
 #+end_src
