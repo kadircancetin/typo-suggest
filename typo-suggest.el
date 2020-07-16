@@ -75,14 +75,14 @@ comes from `typo-suggest--fetch-result'."
 
 
 (defun typo-suggest--helm-replace-word(x)
-  "Replace the word under the cursor with X paramter."
+  "Replace the word under the cursor with X parameter."
   (interactive)
   (save-excursion
     (delete-region (beginning-of-thing 'word) (end-of-thing 'word))
     (insert x)))
 
 (defun typo-suggest--do-helm(input)
-  "Strating helm suggestion with INPUT parameter."
+  "Starting helm suggestion with INPUT parameter."
   (helm :sources
         (helm-build-sync-source "Helm Word"
           :candidates (lambda (&optional _) (typo-suggest--results helm-input))
