@@ -53,9 +53,10 @@
   :type 'integer
   :group 'typo-suggest)
 
-(defcustom default-search-method 'datamuse
-  ""
+(defcustom typo-suggest-default-search-method 'ispell
+  "or 'ispell or 'datamuse" ;; TODO
   :type 'symbol
+  :group 'typo-suggest
   )
 
 
@@ -73,39 +74,13 @@ Argument QUERY is string which will searched."
     (re-search-forward "^$")
     (delete-region (point)(point-min))(buffer-string)))
 
-(defun typo-suggest--results (fetched_str)
+(defun typo-suggest--results (QUERY)
   "Gets json str, return parsed elisp obj.
-It returns list of strings suggestion.  Argument FETCHED_STR is
+It returns list of strings suggestion.  Argument QUERY is
 comes from `typo-suggest--fetch-result'."
-
-  (mapcar 'cdr (mapcar 'car (json-read-from-string  (typo-suggest--fetch-results fetched_str)))))
-
+  (mapcar 'cdr (mapcar 'car (json-read-from-string  (typo-suggest--fetch-results QUERY)))))
 
-(defun typo-suggest--helm-replace-word(x)
-  "Replace the word under the cursor with X parameter."
-  (interactive)
-  (save-excursion
-    (delete-region (beginning-of-thing 'word) (end-of-thing 'word))
-    (insert x)))
-
-(defun typo-suggest--do-helm(input)
-  "Strating helm suggestion with INPUT parameter."
-  (helm :sources
-        (helm-build-sync-source "Helm Word"
-          :candidates (lambda (&optional _) (typo-suggest--results helm-input))
-          :fuzzy-match nil
-          :action '(("Insert" . insert)
-                    ("Update Word" . typo-suggest--helm-replace-word)
-                    ;; TODO: make configurable google translate integration.
-                    ;;("Translate" . (lambda (x) (google-translate-translate "en" "tr" x)))
-                    )
-          :volatile t
-          :must-match t
-          ;; :nohighlight t
-          :match-dynamic t)
-        :buffer "*helm test*"
-        :input input))
-
+;; ispell part
 (defun typo-suggest--ispell-filter-fixes-line (terminal_output word)
   (car (-filter
         (lambda (line)
@@ -128,23 +103,51 @@ comes from `typo-suggest--fetch-result'."
      (is-wrong? '("NOT FOUND"))
      (t (list word)))))
 
-(defun typo-suggest--do-helm-ispell(input)
+
+(defun typo-suggest--ispell-results (QUERY)
+  (typo-suggest--parse-ispell-suggest
+   (progn
+     (get-buffer-create "*tmp*")
+     (set-buffer "*tmp*")
+     (erase-buffer) ; for the safe of memory, not needed
+     (current-buffer)
+     (insert QUERY)
+     (call-process-region (point-min) (point-max) "ispell" t
+                          "*tmp*" "*tmp*" "-a")
+     (buffer-string))
+   QUERY))
+
+
+
+(defun typo-suggest--get-suggestion-list(inpt)
+  (if (eq typo-suggest-default-search-method 'ispell)
+      (typo-suggest--ispell-results inpt)
+    (typo-suggest--results inpt)))
+
+
+(defun typo-suggest--helm-replace-word(x)
+  "Replace the word under the cursor with X parameter."
+  (interactive)
+  (save-excursion
+    (delete-region (beginning-of-thing 'word) (end-of-thing 'word))
+    (insert x)))
+
+(defun typo-suggest--do-helm(input)
   "Strating helm suggestion with INPUT parameter."
   (helm :sources
-        (helm-build-sync-source "Helm Word"
-          :candidates
-          (lambda (&optional _)
-            (typo-suggest--parse-ispell-suggest
-             (with-temp-buffer
-               (call-process "bash" nil t nil "-c" (format "echo %s | ispell -a"  (or helm-input "nil")))
-               (buffer-string))
-             helm-input
-             ))
-          :volatile t
-          :match-dynamic t
+        (helm-build-sync-source "Typo Suggest"
+          :candidates (lambda (&optional _) (typo-suggest--get-suggestion-list helm-input))
+          :fuzzy-match nil
           :action '(("Insert" . insert)
-                    ("Update Word" . typo-suggest--helm-replace-word)))
-        :buffer "*helm test*"
+                    ("Update Word" . typo-suggest--helm-replace-word)
+                    ;; TODO: make configurable google translate integration.
+                    ("Translate" . (lambda (x) (google-translate-translate "en" "tr" x))))
+
+          :volatile t
+          :must-match t
+          ;; :nohighlight t
+          :match-dynamic t)
+        :buffer "*Typo Suggest*"
         :input input))
 
 
@@ -152,9 +155,7 @@ comes from `typo-suggest--fetch-result'."
 (defun typo-suggest-helm()
   "Get word suggestion from datamuse api with helm."
   (interactive)
-  (if (eq default-search-method 'ispell)
-      (typo-suggest--do-helm-ispell (thing-at-point 'word))
-    (typo-suggest--do-helm (thing-at-point 'word))))
+  (typo-suggest--do-helm (thing-at-point 'word)))
 
 
 ;;;###autoload
@@ -167,13 +168,13 @@ Optional argument IGNORED ignored arguments."
   (cl-case command
     (interactive (company-begin-backend 'typo-suggest-company))
     (prefix (company-grab-symbol))
-    (candidates  (typo-suggest--results arg))
+    (candidates  (typo-suggest--get-suggestion-list arg))
     (no-cache t)
     (require-match nil)
     (meta (format "Word search %s" arg))))
 
-
 
+
 (provide 'typo-suggest)
 
 ;;; typo-suggest.el ends here
