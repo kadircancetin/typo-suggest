@@ -57,7 +57,7 @@
   "Fetching results from datamuse api and return as a string.
 Argument QUERY is string which will searched."
   (with-current-buffer
-      ;; TODO: show error or something to user if bigger than 'typo-suggest-timout sec
+      ;; TODO: show error or something to user if bigger than 'typo-suggest-timeout sec
       (url-retrieve-synchronously
        (format "https://api.datamuse.com/sug?max=%s&s=%s"
                typo-suggest-suggestion-count query)
@@ -75,7 +75,7 @@ comes from `typo-suggest--fetch-result'."
 
 
 (defun typo-suggest--helm-replace-word(x)
-  "Replace the word under the cursor with X paramter."
+  "Replace the word under the cursor with X parameter."
   (interactive)
   (save-excursion
     (delete-region (beginning-of-thing 'word) (end-of-thing 'word))
