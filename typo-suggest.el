@@ -32,6 +32,8 @@
 (require 'cl-lib)
 (require 'json)
 (require 'thingatpt)
+(require 's)
+(require 'dash)
 (require 'helm)
 (require 'company)
 
@@ -50,6 +52,11 @@
   "Number of second to try maximum connection server time."
   :type 'integer
   :group 'typo-suggest)
+
+(defcustom default-search-method 'datamuse
+  ""
+  :type 'symbol
+  )
 
 
 
@@ -98,13 +105,56 @@ comes from `typo-suggest--fetch-result'."
           :match-dynamic t)
         :buffer "*helm test*"
         :input input))
+
+(defun typo-suggest--ispell-filter-fixes-line (terminal_output word)
+  (car (-filter
+        (lambda (line)
+          (when (s-contains? (format "& %s" word) line)
+            t))
+        (split-string terminal_output "\n"))))
+
+(defun typo-suggest--ispell-is-wrong (terminal_output)
+  (s-contains? "#" (car (cdr (split-string terminal_output "\n")))))
+
+
+(defun typo-suggest--parse-ispell-suggest(terminal_output word)
+  (let* ((line-fixes (typo-suggest--ispell-filter-fixes-line terminal_output word))
+         (is-wrong? (typo-suggest--ispell-is-wrong terminal_output)))
+
+    (cond
+     (line-fixes (-map 's-trim (split-string
+                                (car (cdr (split-string line-fixes ":")))
+                                ",")))
+     (is-wrong? '("NOT FOUND"))
+     (t (list word)))))
+
+(defun typo-suggest--do-helm-ispell(input)
+  "Strating helm suggestion with INPUT parameter."
+  (helm :sources
+        (helm-build-sync-source "Helm Word"
+          :candidates
+          (lambda (&optional _)
+            (typo-suggest--parse-ispell-suggest
+             (with-temp-buffer
+               (call-process "bash" nil t nil "-c" (format "echo %s | ispell -a"  (or helm-input "nil")))
+               (buffer-string))
+             helm-input
+             ))
+          :volatile t
+          :match-dynamic t
+          :action '(("Insert" . insert)
+                    ("Update Word" . typo-suggest--helm-replace-word)))
+        :buffer "*helm test*"
+        :input input))
 
 
 ;;;###autoload
 (defun typo-suggest-helm()
   "Get word suggestion from datamuse api with helm."
   (interactive)
-  (typo-suggest--do-helm (thing-at-point 'word)))
+  (if (eq default-search-method 'ispell)
+      (typo-suggest--do-helm-ispell (thing-at-point 'word))
+    (typo-suggest--do-helm (thing-at-point 'word))))
 
 
 ;;;###autoload
