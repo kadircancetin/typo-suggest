@@ -36,7 +36,7 @@
 (require 'dash)
 (require 'helm)
 (require 'company)
-
+(require 'google-translate)
 
 (defgroup typo-suggest nil
   "Fix the typos"
@@ -103,19 +103,17 @@ comes from `typo-suggest--fetch-result'."
      (is-wrong? '("NOT FOUND"))
      (t (list word)))))
 
-
 (defun typo-suggest--ispell-results (QUERY)
-  (typo-suggest--parse-ispell-suggest
-   (progn
-     (get-buffer-create "*tmp*")
-     (set-buffer "*tmp*")
-     (erase-buffer) ; for the safe of memory, not needed
-     (current-buffer)
-     (insert QUERY)
-     (call-process-region (point-min) (point-max) "ispell" t
-                          "*tmp*" "*tmp*" "-a")
-     (buffer-string))
-   QUERY))
+  (let ((bas nil) (son nil))
+    (typo-suggest--parse-ispell-suggest
+
+     (with-temp-buffer
+       (insert QUERY)
+       (call-process-region 1 (point-max) "ispell" t
+                            t "*tmp*" "-a")
+       (buffer-string))
+     QUERY)))
+(typo-suggest--ispell-results "QUEY")
 
 
 
