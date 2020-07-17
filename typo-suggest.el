@@ -53,7 +53,7 @@
   :type 'integer
   :group 'typo-suggest)
 
-(defcustom typo-suggest-default-search-method 'ispell
+(defcustom typo-suggest-default-search-method 'datamuse
   "or 'ispell or 'datamuse" ;; TODO
   :type 'symbol
   :group 'typo-suggest
@@ -109,18 +109,18 @@ comes from `typo-suggest--fetch-result'."
 
      (with-temp-buffer
        (insert QUERY)
-       (call-process-region 1 (point-max) "ispell" t
-                            t "*tmp*" "-a")
+       (call-process-region 1 (point-max) "ispell" t t "*tmp*" "-a")
        (buffer-string))
+
      QUERY)))
 (typo-suggest--ispell-results "QUEY")
 
 
 
 (defun typo-suggest--get-suggestion-list(inpt)
-  (if (eq typo-suggest-default-search-method 'ispell)
-      (typo-suggest--ispell-results inpt)
-    (typo-suggest--results inpt)))
+  (cond
+   ((eq typo-suggest-default-search-method 'ispell) (typo-suggest--ispell-results inpt))
+   ((eq typo-suggest-default-search-method 'datamuse) (typo-suggest--results inpt))))
 
 
 (defun typo-suggest--helm-replace-word(x)
@@ -145,7 +145,7 @@ comes from `typo-suggest--fetch-result'."
           :must-match t
           ;; :nohighlight t
           :match-dynamic t)
-        :buffer "*Typo Suggest*"
+        :buffer "*Helm Typo Suggest*"
         :input input))
 
 
