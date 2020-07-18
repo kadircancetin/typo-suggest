@@ -4,7 +4,7 @@
 This package is a [[https://www.datamuse.com/api/][datamuse api]] backend for fixing typos, getting suggestions and finding the correct word with ~helm~ or ~company-mode~.
 
 * Installation
-The melpa package is comming. If you want to try package early and you used straight.el, you can install directly in this snippet.
+The melpa package is coming. If you want to try package early and you used straight.el, you can install directly in this snippet.
 
 #+begin_src emacs-lisp
   (use-package typo-suggest

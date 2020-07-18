@@ -82,7 +82,7 @@ comes from `typo-suggest--fetch-result'."
     (insert x)))
 
 (defun typo-suggest--do-helm(input)
-  "Strating helm suggestion with INPUT parameter."
+  "Starting helm suggestion with INPUT parameter."
   (helm :sources
         (helm-build-sync-source "Helm Word"
           :candidates (lambda (&optional _) (typo-suggest--results helm-input))
