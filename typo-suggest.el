@@ -4,9 +4,9 @@
 
 ;; Author: Kadir Can Çetin <kadircancetin@gmail.com>
 ;; Keywords: convenience, wp
-;; Package-Requires: ((emacs "24.2") (cl-lib "0") (json "0") (helm "3.0") (company "0.9.10"))
+;; Package-Requires: ((emacs "24.3") (helm "3.0") (company "0.9.10"))
 ;; URL: https://github.com/kadircancetin/typo-suggest
-;; Version: 0.0.1
+;; Version: 0.0.2
 
 ;; This program is free software; you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
@@ -19,7 +19,7 @@
 ;; GNU General Public License for more details.
 
 ;; You should have received a copy of the GNU General Public License
-;; along with this program.  If not, see <http://www.gnu.org/licenses/>.
+;; along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 ;;; Commentary:
 
@@ -52,7 +52,6 @@
   :group 'typo-suggest)
 
 
-
 (defun typo-suggest--fetch-results (query)
   "Fetching results from datamuse api and return as a string.
 Argument QUERY is string which will searched."
@@ -70,8 +69,7 @@ Argument QUERY is string which will searched."
   "Gets json str, return parsed elisp obj.
 It returns list of strings suggestion.  Argument FETCHED_STR is
 comes from `typo-suggest--fetch-result'."
-
-  (mapcar 'cdr (mapcar 'car (json-read-from-string  (typo-suggest--fetch-results fetched_str)))))
+  (mapcar #'cdr (mapcar #'car (json-read-from-string  (typo-suggest--fetch-results fetched_str)))))
 
 
 (defun typo-suggest--helm-replace-word(x)
