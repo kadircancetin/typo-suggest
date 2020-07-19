@@ -17,7 +17,7 @@ Use ~M-x typo-suggest-helm~ for helm completion. There is two helm actions. Firs
 
 For company mode, type ~M-x typo-suggest-company~. If you want to make company-mode use typo-suggest all the time, you should add the typo-suggest-company to ~company-backends~.
 
-For the purpose of trying the company use all the time typo-suggest, you can write your evaluate ~(setq company-backends '(typo-suggest-company)~ code. But we highly not advice to that. Don't add this setq line if you don't know what it is for.
+For the purpose of trying the company use all the time typo-suggest, you can write your evaluate ~(setq company-backends '(typo-suggest-company))~ code. But we highly not advice to that. Don't add this setq line if you don't know what it is for.
 
 * Customization
 Variable ~typo-suggest-suggestion-count~ is for the count of suggestions from datamuse. You can upper or lower value for the your choice.
