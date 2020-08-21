@@ -1,10 +1,10 @@
-;;; typo-suggest.el --- Don't make typo with the help of helm and compny ;; -*- lexical-binding: t -*-
+;;; typo-suggest.el --- Don't make typos with the help of helm and company -*- lexical-binding: t -*-
 
 ;; Copyright (C) 2020  Kadir Can Çetin
 
 ;; Author: Kadir Can Çetin <kadircancetin@gmail.com>
 ;; Keywords: convenience, wp
-;; Package-Requires: ((emacs "24.2") (cl-lib "0") (json "0") (helm "3.0") (company "0.9.10") (s "1.12.0") (dash "2.13.0"))
+;; Package-Requires: ((emacs "24.3") (helm "3.0") (company "0.9.10") (s "1.12.0") (dash "2.13.0"))
 ;; URL: https://github.com/kadircancetin/typo-suggest
 ;; Version: 0.0.4
 
@@ -19,16 +19,21 @@
 ;; GNU General Public License for more details.
 
 ;; You should have received a copy of the GNU General Public License
-;; along with this program.  If not, see <http://www.gnu.org/licenses/>.
+;; along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 ;;; Commentary:
-
-;; Fixing typos with helm or company.
+;;  This package is a datamuse api or Ispell backends for fixing typos, getting suggestions and
+;;  finding the correct word with ~helm~ or ~company-mode~.
+;;
+;; This package relies on the third-party Datamuse's /sug API (doc: https://www.datamuse.com/api/)
+;; if you select to use datamuse backend.  The API is free to use any usage and without API key has
+;; a daily 100,000 requests per day limit.  You can contact us with any problem with
+;; https://github.com/kadircancetin/typo-suggest.
+;;
+;; If you want to use Ispell (https://www.gnu.org/software/ispell/) , you have to installed on your
+;; computer.
 
 ;;; Code:
-
-;; code goes here
-
 (require 'cl-lib)
 (require 'json)
 (require 'thingatpt)
@@ -44,12 +49,12 @@
   :group 'helm)
 
 (defcustom typo-suggest-suggestion-count 20
-  "Number of suggestion for 'helm and company completion."
+  "Number of suggestions for 'helm and company completion."
   :type 'integer
   :group 'typo-suggest)
 
 (defcustom typo-suggest-timeout 1
-  "Number of second to try maximum connection server time."
+  "Number of seconds to try maximum server waiting time."
   :type 'integer
   :group 'typo-suggest)
 
@@ -60,13 +65,10 @@
 
 
 (defvar typo-suggest--saved-company-settings nil
-  "Local value for `typo-suggest-company-mode' support."
-  )
-(setq typo-suggest-default-search-method 'ispell)
-(setq-default company-idle-delay 1)
+  "Local value for `typo-suggest-company-mode' support.")
 
 
-(defun typo-suggest--fetch-results (query)
+(defun typo-suggest--datamuse-fetch-results (query)
   "Fetching results from datamuse api and return as a string.
 Argument QUERY is string which will searched."
   (with-current-buffer
@@ -79,11 +81,11 @@ Argument QUERY is string which will searched."
     (re-search-forward "^$")
     (delete-region (point)(point-min))(buffer-string)))
 
-(defun typo-suggest--results (QUERY)
+(defun typo-suggest--datamuse-results (fetched-str)
   "Gets json str, return parsed elisp obj.
-It returns list of strings suggestion.  Argument QUERY is
-comes from `typo-suggest--fetch-result'."
-  (mapcar 'cdr (mapcar 'car (json-read-from-string  (typo-suggest--fetch-results QUERY)))))
+It returns list of strings suggestion.  Argument FETCHED-STR is
+comes from `typo-suggest--datamuse-fetch-results'."
+  (mapcar #'cdr (mapcar #'car (json-read-from-string  (typo-suggest--datamuse-fetch-results fetched-str)))))
 
 
 (defun typo-suggest--ispell-filter-fixes-line (terminal-output word)
@@ -116,12 +118,11 @@ comes from `typo-suggest--fetch-result'."
    query))
 
 
-
 (defun typo-suggest--get-suggestion-list(query)
   "Return suggested list corresponding QUERY and `typo-suggest-default-search-method'."
   (cond
    ((eq typo-suggest-default-search-method 'ispell) (typo-suggest--ispell-results query))
-   ((eq typo-suggest-default-search-method 'datamuse) (typo-suggest--results query))))
+   ((eq typo-suggest-default-search-method 'datamuse) (typo-suggest--datamuse-results query))))
 
 
 (defun typo-suggest--helm-insert-or-replace-word(x)
@@ -133,7 +134,7 @@ comes from `typo-suggest--fetch-result'."
     (insert x)))
 
 (defun typo-suggest--do-helm(input)
-  "Strating helm suggestion with INPUT parameter."
+  "Starting helm suggestion with INPUT parameter."
   (helm :sources
         (helm-build-sync-source "Typo Suggest"
           :candidates (lambda (&optional _) (typo-suggest--get-suggestion-list helm-input))
@@ -159,11 +160,10 @@ comes from `typo-suggest--fetch-result'."
 
 
 ;;;###autoload
-(defun typo-suggest-company (command &optional arg &rest ignored)
+(defun typo-suggest-company (command &optional arg &rest _ignored)
   "Get word suggestion from datamuse api with company mode.
 Argument COMMAND is used for company.
-Optional argument ARG Is used from company to send which will search.
-Optional argument IGNORED ignored arguments."
+Optional argument ARG Is used from company to send which will search."
   (interactive (list 'interactive))
   (cl-case command
     (interactive (company-begin-backend 'typo-suggest-company))
@@ -174,6 +174,7 @@ Optional argument IGNORED ignored arguments."
     (meta (format "Word search %s" arg))))
 
 
+;;;###autoload
 (define-minor-mode typo-suggest-company-mode
   "Disable all company backends and enable typo-suggest-company or wise versa."
   :lighter "typo"

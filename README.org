@@ -1,7 +1,7 @@
 #+NAME:   fig:typo-suggest
 [[https://s7.gifyu.com/images/typo-suggest.gif]]
 
-This package is a [[https://www.datamuse.com/api/][datamuse api]] backend for fixing typos, getting suggestions and finding the correct word with ~helm~ or ~company-mode~.
+This package is a [[https://www.datamuse.com/api/][datamuse api]] or [[https://www.gnu.org/software/ispell/][ispell]] backends for fixing typos, getting suggestions and finding the correct word with ~helm~ or ~company-mode~.
 
 * Installation
 
@@ -17,7 +17,7 @@ For company mode backend, type =M-x typo-suggest-company-mode=. It will activate
 I don't prefer to use it with hook but if you want it:
 
 #+begin_src emacs-lisp
-(add-hook 'org-mode-hook 'typo-suggest-company-mode)
+  (add-hook 'org-mode-hook 'typo-suggest-company-mode)
 #+end_src
 
 * Customization
