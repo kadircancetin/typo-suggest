@@ -32,11 +32,11 @@
 (require 'cl-lib)
 (require 'json)
 (require 'thingatpt)
-(require 's)
 (require 'dash)
 (require 'helm)
 (require 'company)
-(require 'google-translate)
+(require 's)
+;; (require 'google-translate)
 
 (defgroup typo-suggest nil
   "Fix the typos"
@@ -54,13 +54,18 @@
   :group 'typo-suggest)
 
 (defcustom typo-suggest-default-search-method 'datamuse
-  "or 'ispell or 'datamuse" ;; TODO
+  "Select the backend of completion.  `datamuse' or `ispell' are currently supported."
   :type 'symbol
-  :group 'typo-suggest
-  )
+  :group 'typo-suggest)
 
 
+(defvar typo-suggest--saved-company-settings nil
+  "Local value for `typo-suggest-company-mode' support."
+  )
+(setq typo-suggest-default-search-method 'ispell)
+(setq-default company-idle-delay 1)
 
+
 (defun typo-suggest--fetch-results (query)
   "Fetching results from datamuse api and return as a string.
 Argument QUERY is string which will searched."
@@ -79,55 +84,52 @@ Argument QUERY is string which will searched."
 It returns list of strings suggestion.  Argument QUERY is
 comes from `typo-suggest--fetch-result'."
   (mapcar 'cdr (mapcar 'car (json-read-from-string  (typo-suggest--fetch-results QUERY)))))
+
 
-;; ispell part
-(defun typo-suggest--ispell-filter-fixes-line (terminal_output word)
+(defun typo-suggest--ispell-filter-fixes-line (terminal-output word)
+  "Filters Ispell's TERMINAL-OUTPUT with WORD wich if line is hasn't suggested any fix."
   (car (-filter
         (lambda (line)
           (when (s-contains? (format "& %s" word) line)
             t))
-        (split-string terminal_output "\n"))))
+        (split-string terminal-output "\n"))))
 
-(defun typo-suggest--ispell-is-wrong (terminal_output)
-  (s-contains? "#" (car (cdr (split-string terminal_output "\n")))))
-
-
-(defun typo-suggest--parse-ispell-suggest(terminal_output word)
-  (let* ((line-fixes (typo-suggest--ispell-filter-fixes-line terminal_output word))
-         (is-wrong? (typo-suggest--ispell-is-wrong terminal_output)))
+(defun typo-suggest--parse-ispell-suggest(terminal-output word)
+  "Parse Ispell's TERMINAL-OUTPUT and searched WORD.  It return suggested list."
+  (let* ((line-fixes (typo-suggest--ispell-filter-fixes-line terminal-output word))
+         (is-wrong? (s-contains? "#" (car (cdr (split-string terminal-output "\n"))))))
 
     (cond
      (line-fixes (-map 's-trim (split-string
                                 (car (cdr (split-string line-fixes ":")))
                                 ",")))
-     (is-wrong? '("NOT FOUND"))
+     (is-wrong? 'nil)
      (t (list word)))))
 
-(defun typo-suggest--ispell-results (QUERY)
-  (let ((bas nil) (son nil))
-    (typo-suggest--parse-ispell-suggest
-
-     (with-temp-buffer
-       (insert QUERY)
-       (call-process-region 1 (point-max) "ispell" t t "*tmp*" "-a")
-       (buffer-string))
-
-     QUERY)))
-(typo-suggest--ispell-results "QUEY")
+(defun typo-suggest--ispell-results (query)
+  "Run Ispell commands, parse it and return suggested Ispell list corresponding the QUERY."
+  (typo-suggest--parse-ispell-suggest
+   (with-temp-buffer
+     (insert query)
+     (call-process-region 1 (point-max) "ispell" t t "*tmp*" "-a")
+     (buffer-string))
+   query))
 
 
 
-(defun typo-suggest--get-suggestion-list(inpt)
+(defun typo-suggest--get-suggestion-list(query)
+  "Return suggested list corresponding QUERY and `typo-suggest-default-search-method'."
   (cond
-   ((eq typo-suggest-default-search-method 'ispell) (typo-suggest--ispell-results inpt))
-   ((eq typo-suggest-default-search-method 'datamuse) (typo-suggest--results inpt))))
+   ((eq typo-suggest-default-search-method 'ispell) (typo-suggest--ispell-results query))
+   ((eq typo-suggest-default-search-method 'datamuse) (typo-suggest--results query))))
 
 
-(defun typo-suggest--helm-replace-word(x)
+(defun typo-suggest--helm-insert-or-replace-word(x)
   "Replace the word under the cursor with X parameter."
   (interactive)
   (save-excursion
-    (delete-region (beginning-of-thing 'word) (end-of-thing 'word))
+    (when (thing-at-point 'word)
+      (delete-region (beginning-of-thing 'word) (end-of-thing 'word)))
     (insert x)))
 
 (defun typo-suggest--do-helm(input)
@@ -136,10 +138,10 @@ comes from `typo-suggest--fetch-result'."
         (helm-build-sync-source "Typo Suggest"
           :candidates (lambda (&optional _) (typo-suggest--get-suggestion-list helm-input))
           :fuzzy-match nil
-          :action '(("Insert" . insert)
-                    ("Update Word" . typo-suggest--helm-replace-word)
+          :action '(("Insert or update" . typo-suggest--helm-insert-or-replace-word)
                     ;; TODO: make configurable google translate integration.
-                    ("Translate" . (lambda (x) (google-translate-translate "en" "tr" x))))
+                    ;; ("Translate" . (lambda (x) (google-translate-translate "en" "tr" x)))
+                    )
 
           :volatile t
           :must-match t
@@ -171,6 +173,16 @@ Optional argument IGNORED ignored arguments."
     (require-match nil)
     (meta (format "Word search %s" arg))))
 
+
+(define-minor-mode typo-suggest-company-mode
+  "Disable all company backends and enable typo-suggest-company or wise versa."
+  :lighter "typo"
+  ;; :keymap flycheck-mode-map
+  (if typo-suggest-company-mode
+      (progn
+        (setq-local typo-suggest--saved-company-settings company-backends)
+        (setq-local company-backends '(typo-suggest-company)))
+    (setq-local company-backends typo-suggest--saved-company-settings)))
 
 
 (provide 'typo-suggest)
