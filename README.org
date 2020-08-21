@@ -1,5 +1,6 @@
 #+NAME:   fig:typo-suggest
 [[https://s7.gifyu.com/images/typo-suggest.gif]]
+(Gif is older version of typo-suggest but idea is same)
 
 This package is a [[https://www.datamuse.com/api/][datamuse api]] or [[https://www.gnu.org/software/ispell/][ispell]] backends for fixing typos, getting suggestions and finding the correct word with ~helm~ or ~company-mode~.
 
