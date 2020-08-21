@@ -4,9 +4,9 @@
 
 ;; Author: Kadir Can Çetin <kadircancetin@gmail.com>
 ;; Keywords: convenience, wp
-;; Package-Requires: ((emacs "24.2") (cl-lib "0") (json "0") (helm "3.0") (company "0.9.10"))
+;; Package-Requires: ((emacs "24.2") (cl-lib "0") (json "0") (helm "3.0") (company "0.9.10") (s "1.12.0") (dash "2.13.0"))
 ;; URL: https://github.com/kadircancetin/typo-suggest
-;; Version: 0.0.1
+;; Version: 0.0.4
 
 ;; This program is free software; you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
