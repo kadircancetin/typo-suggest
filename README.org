@@ -5,26 +5,30 @@ This package is a [[https://www.datamuse.com/api/][datamuse api]] backend for fi
 
 * Installation
 
-[[[[https://melpa.org/#/typo-suggest][file:https://melpa.org/packages/typo-suggest-badge.svg]]
+[[https://melpa.org/#/typo-suggest][file:https://melpa.org/packages/typo-suggest-badge.svg]]
 
-Package is avalible in melpa. So you can install directly =M-x typo-suggest= or if you use use-package =(use-package typo-suggest)=.
+Package is avalible in melpa. So you can install directly =M-x package-install=, =typo-suggest= or if you use use-package =(use-package typo-suggest)=.
 
 * Usage
 Use =M-x typo-suggest-helm= for helm completion.
 
 For company mode backend, type =M-x typo-suggest-company-mode=. It will activate or deactivate typo-suggest back-end.
 
-* Customization
-You can change the backends with typo-suggest-default-search-method variable.
+I don't prefer to use it with hook but if you want it:
 
 #+begin_src emacs-lisp
-  (setq typo-suggest-default-search-method 'datamuse)
-  (setq typo-suggest-default-search-method 'ispell)
+(add-hook 'org-mode-hook 'typo-suggest-company-mode)
 #+end_src
 
-Variable ~typo-suggest-suggestion-count~ is for the count of suggestions from datamuse. You can upper or lower value for the your choice.
+* Customization
+You can change the backends with:
 
-Variable ~typo-suggest-timeout~ is for the remote server timeout. If your connection is unstable, you may want to increase this value.
+#+begin_src emacs-lisp
+  (setq typo-suggest-default-search-method 'datamuse) ;; beter but online
+  (setq typo-suggest-default-search-method 'ispell)   ;; not good but local if you installed ispell
+#+end_src
+
+~typo-suggest-suggestion-count~ is for the count of suggestions from backends. You can upper or lower value for the your choice. ~typo-suggest-timeout~ is for the remote server timeout for datamuse backend. If your connection is unstable, you may want to increase this value.
 
 #+begin_src emacs-lisp
   (setq typo-suggest-suggestion-count 20)
@@ -32,7 +36,7 @@ Variable ~typo-suggest-timeout~ is for the remote server timeout. If your connec
 #+end_src
 
 * Common Issues
-Company mode or helm mode is not running asyncronous. Helm is not frustrating but ~company-idle-delay~ varible is so low, company mode is not fast on ~datamuse~ backend.
+Company mode or helm mode is _not running asyncronous_. Helm is not frustrating but if the *company-idle-delay* varible is so low, company mode is not fast on ~datamuse~ backend.
 
 * Road Map
 - [ ] Google translate integration.
