@@ -71,6 +71,7 @@
 
 
 (defun typo-suggest--clear-tmp-buffers ()
+  "Some tmp buffers witch may not killed because of helm."
   (--map (when (or (s-starts-with? " *http api.datamuse.com" (buffer-name it))
                    (s-starts-with? " *url-http-temp*" (buffer-name it)))
            (with-current-buffer it (kill-buffer)))
@@ -95,11 +96,11 @@ Argument QUERY is string which will searched."
 
     results))
 
-(defun typo-suggest--datamuse-results (fetched-str)
+(defun typo-suggest--datamuse-results (query)
   "Gets json str, return parsed elisp obj.
-It returns list of strings suggestion.  Argument FETCHED-STR is
-comes from `typo-suggest--datamuse-fetch-results'."
-  (let ((res (typo-suggest--datamuse-fetch-results fetched-str)))
+It returns list of strings suggestion.  Argument QUERY is search
+query."
+  (let ((res (typo-suggest--datamuse-fetch-results query)))
     ;; (prin1 (nth 0 (mapcar #'cdr (mapcar #'car (json-read-from-string  res)))))
     (mapcar #'cdr (mapcar #'car (json-read-from-string  res)))))
 
@@ -172,6 +173,7 @@ comes from `typo-suggest--datamuse-fetch-results'."
 
 ;;;###autoload
 (defun typo-suggest-ivy()
+  "Run typo suggest with ivy backend."
   (interactive)
   (let ((word (or (thing-at-point 'word)
                   "")))
