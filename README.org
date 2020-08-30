@@ -42,5 +42,5 @@ You can change the backends with:
 Company mode or helm mode is _not running asyncronous_. Helm is not frustrating but if the *company-idle-delay* varible is so low, company mode is not fast on ~datamuse~ backend.
 
 * Road Map
-- [ ] Google translate integration.
-- [X] Ivy integration.
+- [X] Google translate integration.
+- [ ] Ivy integration.

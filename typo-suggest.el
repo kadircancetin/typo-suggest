@@ -41,7 +41,8 @@
 (require 'helm)
 (require 'company)
 (require 's)
-;; (require 'google-translate)
+(require 'google-translate nil t)
+
 
 (defgroup typo-suggest nil
   "Fix the typos"
@@ -71,21 +72,32 @@
 (defun typo-suggest--datamuse-fetch-results (query)
   "Fetching results from datamuse api and return as a string.
 Argument QUERY is string which will searched."
-  (with-current-buffer
-      ;; TODO: show error or something to user if bigger than 'typo-suggest-timeout sec
-      (url-retrieve-synchronously
-       (format "https://api.datamuse.com/sug?max=%s&s=%s"
-               typo-suggest-suggestion-count query)
-       nil t typo-suggest-timeout)
-    (goto-char (point-min))
-    (re-search-forward "^$")
-    (delete-region (point)(point-min))(buffer-string)))
+  (message "search: %s" query)
+  (let ((results nil))
+
+    (with-current-buffer
+        (url-retrieve-synchronously
+         (format "https://api.datamuse.com/sug?max=%s&s=%s"
+                 typo-suggest-suggestion-count query)
+         nil nil typo-suggest-timeout)
+      (goto-char url-http-end-of-headers)
+      (delete-region (point-min)(point))
+      (setq results (buffer-string))
+      (kill-buffer))
+
+    (--map (when (or (s-starts-with? " *http api.datamuse.com" (buffer-name it))
+                     (s-starts-with? " *url-http-temp*" (buffer-name it)))
+             (with-current-buffer it (kill-buffer)))
+           (buffer-list))
+    results))
 
 (defun typo-suggest--datamuse-results (fetched-str)
   "Gets json str, return parsed elisp obj.
 It returns list of strings suggestion.  Argument FETCHED-STR is
 comes from `typo-suggest--datamuse-fetch-results'."
-  (mapcar #'cdr (mapcar #'car (json-read-from-string  (typo-suggest--datamuse-fetch-results fetched-str)))))
+  (let ((res (typo-suggest--datamuse-fetch-results fetched-str)))
+    (prin1 (nth 0 (mapcar #'cdr (mapcar #'car (json-read-from-string  res)))))
+    (mapcar #'cdr (mapcar #'car (json-read-from-string  res)))))
 
 
 (defun typo-suggest--ispell-filter-fixes-line (terminal-output word)
@@ -125,29 +137,32 @@ comes from `typo-suggest--datamuse-fetch-results'."
    ((eq typo-suggest-default-search-method 'datamuse) (typo-suggest--datamuse-results query))))
 
 
+(setq typo-suggest--helm-source
+      (helm-build-sync-source "Typo Suggest"
+        :candidates (lambda (&optional _) (typo-suggest--get-suggestion-list helm-input))
+        :fuzzy-match nil
+        :action '(("Insert or update" . typo-suggest--helm-insert-or-replace-word)
+                  ("Translate" . (lambda (x)
+                                   (google-translate-translate
+                                    google-translate-default-source-language
+                                    google-translate-default-target-language x))))
+        :volatile t
+        :must-match t
+        :match-dynamic t))
+
 (defun typo-suggest--helm-insert-or-replace-word(x)
   "Replace the word under the cursor with X parameter."
   (interactive)
   (save-excursion
     (when (thing-at-point 'word)
       (delete-region (beginning-of-thing 'word) (end-of-thing 'word)))
-    (insert x)))
+    (insert x))
+  (forward-word))
+
 
 (defun typo-suggest--do-helm(input)
   "Starting helm suggestion with INPUT parameter."
-  (helm :sources
-        (helm-build-sync-source "Typo Suggest"
-          :candidates (lambda (&optional _) (typo-suggest--get-suggestion-list helm-input))
-          :fuzzy-match nil
-          :action '(("Insert or update" . typo-suggest--helm-insert-or-replace-word)
-                    ;; TODO: make configurable google translate integration.
-                    ;; ("Translate" . (lambda (x) (google-translate-translate "en" "tr" x)))
-                    )
-
-          :volatile t
-          :must-match t
-          ;; :nohighlight t
-          :match-dynamic t)
+  (helm :sources typo-suggest--helm-source
         :buffer "*Helm Typo Suggest*"
         :input input))
 
@@ -178,7 +193,6 @@ Optional argument ARG Is used from company to send which will search."
 (define-minor-mode typo-suggest-company-mode
   "Disable all company backends and enable typo-suggest-company or wise versa."
   :lighter "typo"
-  ;; :keymap flycheck-mode-map
   (if typo-suggest-company-mode
       (progn
         (setq-local typo-suggest--saved-company-settings company-backends)
